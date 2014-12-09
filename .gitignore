@@ -1,2 +1,3 @@
 ENV/
 config.py
+cww_tweets.csv
