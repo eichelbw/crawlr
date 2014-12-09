@@ -10,29 +10,31 @@ access_token_secret = config.ACCESS_TOKEN_SECRET
 
 class scraper:
 
-    def __init__(self, track):
+    def __init__(self, track, target):
         self.track = track
+        self.target = target
 
         auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
         auth.set_access_token(access_token, access_token_secret)
         api = tweepy.API(auth)
 
-        twitterStream = tweepy.Stream(auth, listener(api, self.track))
+        twitterStream = tweepy.Stream(auth, listener(self.target))
         twitterStream.filter(track=[self.track])
 
 class listener(StreamListener):
     """pretty basic streaming api listener."""
-    def __init__(self, track):
-        super(listner, self).__init__()
-        self.track = track
+
+    def __init__(self, target):
+        StreamListener.__init__(self)
+        self.target = target
 
     def on_data(self, data):
         jsn = json.loads(data)
         if jsn['lang'] == 'en': # only english words for now
             if jsn['text'][:2] == "RT": # don't care who's being retweeted
-                tweet(jsn['user']['screen_name'], jsn['text'].split(": ")[1], self.track).commit()
+                tweet(jsn['text'].split(": ")[1], self.target).commit()
             else:
-                tweet(jsn['user']['screen_name'], jsn['text'], self.track).commit()
+                tweet(jsn['text'], self.target).commit()
         return True
 
     def on_error(self, status):
@@ -44,14 +46,11 @@ class listener(StreamListener):
 class tweet:
     """takes info from listener, formats it, commits it to csv"""
 
-    def __init__(self, user, in_text, destination):
-        self.user = user # maybe use this later
+    def __init__(self, in_text, target):
+        print "tweet init"
         self.in_text = in_text
+        self.target = target
         self.tweet_text = self.csv_format(self.in_text)
-        if destinaiton[0] in "@#": # filenames don't like punctuation
-            self.destination = destination[1:]
-        else:
-            self.destination = destination
 
     def csv_format(self, in_txt):
         in_txt = in_txt.split()
@@ -75,7 +74,7 @@ class tweet:
     def commit(self):
         """writes the current tweet to the destination csv"""
         print self.tweet_text # print to the console just to have something to look at
-        with open(self.destination, "a") as f:
+        with open(self.target, "a") as f:
             f.write(self.tweet_text + "\n")
 
 
