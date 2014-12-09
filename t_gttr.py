@@ -64,7 +64,7 @@ class tweet:
 
     def commit(self):
         print self.tweet_text
-        with open("cww_tweets.csv", "a") as f:
+        with open("lwb_tweets.csv", "a") as f:
             f.write(self.tweet_text + "\n")
 
 
@@ -72,4 +72,4 @@ class tweet:
 auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
 auth.set_access_token(access_token, access_token_secret)
 twitterStream = tweepy.Stream(auth, listener(api))
-twitterStream.filter(track=["#CrimingWhileWhite"])
+twitterStream.filter(track=["#livingwhileblack"])

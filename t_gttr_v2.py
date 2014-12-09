@@ -8,25 +8,31 @@ consumer_key, consumer_secret = config.CONSUMER_KEY, config.CONSUMER_SECRET
 access_token = config.ACCESS_TOKEN
 access_token_secret = config.ACCESS_TOKEN_SECRET
 
-auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
-auth.set_access_token(access_token, access_token_secret)
+class scraper:
 
-api = tweepy.API(auth)
+    def __init__(self, track):
+        self.track = track
 
-# tweets = api.search(q="#CrimingWhileWhite")
+        auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
+        auth.set_access_token(access_token, access_token_secret)
+        api = tweepy.API(auth)
+
+        twitterStream = tweepy.Stream(auth, listener(api, self.track))
+        twitterStream.filter(track=[self.track])
 
 class listener(StreamListener):
-    """basic stream listener for now. just prints to console. will style on it
-    l8r
-    """
+    """pretty basic streaming api listener."""
+    def __init__(self, track):
+        super(listner, self).__init__()
+        self.track = track
 
     def on_data(self, data):
         jsn = json.loads(data)
         if jsn['lang'] == 'en': # only english words for now
-            if jsn['text'][:2] == "RT":
-                tweet(jsn['user']['screen_name'], jsn['text'].split(": ")[1]).commit()
+            if jsn['text'][:2] == "RT": # don't care who's being retweeted
+                tweet(jsn['user']['screen_name'], jsn['text'].split(": ")[1], self.track).commit()
             else:
-                tweet(jsn['user']['screen_name'], jsn['text']).commit()
+                tweet(jsn['user']['screen_name'], jsn['text'], self.track).commit()
         return True
 
     def on_error(self, status):
@@ -38,10 +44,14 @@ class listener(StreamListener):
 class tweet:
     """takes info from listener, formats it, commits it to csv"""
 
-    def __init__(self, user, in_text):
+    def __init__(self, user, in_text, destination):
         self.user = user # maybe use this later
         self.in_text = in_text
         self.tweet_text = self.csv_format(self.in_text)
+        if destinaiton[0] in "@#": # filenames don't like punctuation
+            self.destination = destination[1:]
+        else:
+            self.destination = destination
 
     def csv_format(self, in_txt):
         in_txt = in_txt.split()
@@ -63,13 +73,10 @@ class tweet:
         return out_txt
 
     def commit(self):
-        print self.tweet_text
-        with open("cww_tweets.csv", "a") as f:
+        """writes the current tweet to the destination csv"""
+        print self.tweet_text # print to the console just to have something to look at
+        with open(self.destination, "a") as f:
             f.write(self.tweet_text + "\n")
 
 
 
-auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
-auth.set_access_token(access_token, access_token_secret)
-twitterStream = tweepy.Stream(auth, listener(api))
-twitterStream.filter(track=["#CrimingWhileWhite"])
