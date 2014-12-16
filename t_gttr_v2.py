@@ -1,7 +1,6 @@
 import tweepy
 from tweepy.streaming import StreamListener
 from datetime import datetime
-import os
 import json
 import config
 
@@ -14,53 +13,36 @@ access_token_secret = config.ACCESS_TOKEN_SECRET
 # that version saves json objects, and this one grabs text and coerces
 # it into a roughly csv format.
 
-class scraper:
+### USAGE ###
+# define filter in ./FILTER.txt (one term/line)
+#
 
-    def __init__(self, track, target):
-        self.track = track
-        self.target = target
-
-        auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
-        auth.set_access_token(access_token, access_token_secret)
-        api = tweepy.API(auth)
-
-        twitterStream = tweepy.Stream(auth, listener(self.target))
-        twitterStream.filter(track=[self.track])
 
 class listener(StreamListener):
     """pretty basic streaming api listener."""
 
     def __init__(self, target):
-        super(StreamListener, self).__init__(self)
-        self.base_path = target
-        os.system("touch %s" % target)
+        super(listener, self).__init__(self)
+        self.target = target # where 2 save the tweets
 
-    d = datetime.today()
-    self.filename = "%i-%02d-%02d.csv" % (d.year, d.month, d.day)
-    self.fh = open(self.base_path + "/" + self.filename, "a")
-
-    self.tweet_count = 0
-    self.error_count = 0
-    self.limit_count = 0
-    self.last = datetime.now()
-
-    def on_data(self, data): # called when the listener receivs a new tweet
-        tweet(json.loads(data), self.base_path).commit()
+    def on_data(self, data): # called when the listener receives a new tweet
+        print "got a tweet"
+        tweet(json.loads(data), self.target).commit()
         return True
 
     def on_error(self, status):
         print status
 
     def on_timeout(self):
+        print "timeout"
         return True # don't kill the stream, yo
 
 class tweet:
     """takes info from listener, formats it, commits it to csv"""
 
     def __init__(self, jsn, target):
-        self.jsn = jsn
-        self.target = target
         self.tweet_text = self.csv_format(self.jsn)
+        self.target = target
 
     def csv_format(self, in_jsn):
         if in_jsn['lang'] == 'en': # only english words for now
@@ -89,16 +71,32 @@ class tweet:
 
     def commit(self):
         """writes the current tweet to the destination csv"""
-        print self.tweet_text # print to the console just to have something to look at
+        print "%s - %s" % (datetime.now(), self.tweet_text) # print to the console just to have something to look at
         with open(self.target, "a") as f:
-            f.write(self.tweet_text + "\n")
+            f.write(self.tweet_text + "\n") # append tweet to target
 
 
 if __name__ == '__main__':
     while True:
         try:
             # create the listener
-            listener = listener()
-        except TimeoutException:
-            print "%s - Timeout exception caught. Closing stream." % datetime.now()
+            stream_listener = listener("test.csv")
+            auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
+            auth.set_access_token(access_token, access_token_secret)
 
+            # get the filter terms
+            filter_terms = []
+            with open("FILTER.txt", "r") as f:
+                for line in f:
+                    filter_terms.append(line.strip())
+            print "%s - starting stream to track %s" % (datetime.now(), ",".join(filter_terms))
+
+            twitterStream = tweepy.Stream(auth, stream_listener)
+            twitterStream.filter(track=filter_terms)
+        except KeyboardInterrupt:
+            print "%s - caught keyboardinterrupt, killing stream" % datetime.now()
+            twitterStream.disconnect()
+            break
+        except:
+            print "something real strange is up, yo"
+            break
