@@ -26,7 +26,6 @@ class listener(StreamListener):
         self.target = target # where 2 save the tweets
 
     def on_data(self, data): # called when the listener receives a new tweet
-        print "got a tweet"
         tweet(json.loads(data), self.target).commit()
         return True
 
@@ -41,7 +40,7 @@ class tweet:
     """takes info from listener, formats it, commits it to csv"""
 
     def __init__(self, jsn, target):
-        self.tweet_text = self.csv_format(self.jsn)
+        self.tweet_text = self.csv_format(jsn)
         self.target = target
 
     def csv_format(self, in_jsn):
@@ -80,7 +79,7 @@ if __name__ == '__main__':
     while True:
         try:
             # create the listener
-            stream_listener = listener("test.csv")
+            stream_listener = listener("cww_and_lwb.csv")
             auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
             auth.set_access_token(access_token, access_token_secret)
 
