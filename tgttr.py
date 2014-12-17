@@ -78,8 +78,12 @@ class tweet:
 if __name__ == '__main__':
     while True:
         try:
+            # where to save?
+            choice = raw_input("where to save it tho? \n --->").lower()
+            if choice[-4:] != ".csv":
+                choice += ".csv"
             # create the listener
-            stream_listener = listener("cww_and_lwb.csv")
+            stream_listener = listener(choice)
             auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
             auth.set_access_token(access_token, access_token_secret)
 
@@ -88,12 +92,13 @@ if __name__ == '__main__':
             with open("FILTER.txt", "r") as f:
                 for line in f:
                     filter_terms.append(line.strip())
-            print "%s - starting stream to track %s" % (datetime.now(), ",".join(filter_terms))
+            print "%s - starting stream to track %s" % (datetime.now(), ", ".join(filter_terms))
 
             twitterStream = tweepy.Stream(auth, stream_listener)
             twitterStream.filter(track=filter_terms)
         except KeyboardInterrupt:
             print "%s - caught keyboardinterrupt, killing stream" % datetime.now()
+            print "you can find tweets scraped in %s" % choice
             twitterStream.disconnect()
             break
         except:
