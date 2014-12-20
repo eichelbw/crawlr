@@ -79,7 +79,7 @@ if __name__ == '__main__':
     while True:
         try:
             # where to save?
-            choice = raw_input("where to save it tho? \n --->").lower()
+            choice = raw_input("where to save it tho? \n ---> ").lower()
             if choice[-4:] != ".csv":
                 choice += ".csv"
             # create the listener
